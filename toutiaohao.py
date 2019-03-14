@@ -60,7 +60,7 @@ def start(image, target, url, username, password):
     getcheck=driver.find_element_by_id('bytedance-login-submit')
     #点击进入滑块验证码页面
     getcheck.click()
-    time.sleep(1)
+    time.sleep(3)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     #获取验证码的下载地址
     imageurl = soup.find(attrs={"id": "validate-big"}).get("src")
@@ -70,8 +70,8 @@ def start(image, target, url, username, password):
     return driver
 
 def track(driver, distance):
-    slideblock = driver.find_element_by_class_name("validate-drag-button")
-    ActionChains(driver).click_and_hold(slideblock).perform()
+    slideblock = driver.find_element_by_class_name("drag-button")
+    #ActionChains(driver).click_and_hold(slideblock).perform()
     track_list=get_track(distance+3)
     time.sleep(2)
     ActionChains(driver).click_and_hold(slideblock).perform()
@@ -113,3 +113,30 @@ while distance == 0:
     distance = math_img(image, target, value)
 print(distance)
 track(driver, distance)
+
+# cookies1 = driver.get_cookies()
+# cookies = {}
+# for i in cookies1:
+#     cookies[i["name"]] = i["value"]
+# url = "https://mp.toutiao.com/tools/upload_picture/?type=ueditor&pgc_watermark=1&action=uploadimage&encode=utf-8"
+# headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36", "Referer": "https://mp.toutiao.com/profile_v3/graphic/publish"}
+# type = "image/jpeg"
+# with open("image.jpg", "rb") as file:
+#     upfile = file.read()
+# res = requests.post(url, data={"type": "image/jpeg", "upfile": upfile}, headers=headers, cookies=cookies)
+# print(res.status_code)
+# print(res.content)
+#点击发布
+time.sleep(4)
+driver.find_elements_by_class_name('tui2-menu-item')[1].click()
+time.sleep(1)
+#上传图片
+driver.find_element_by_class_name('ql-image').click()
+time.sleep(1)
+#选择图片
+#print(driver.find_elements_by_tag_name('input'))
+driver.find_element_by_xpath("//span[@class='syl-img-upload']/input").send_keys(r'C:\Users\Administrator\Desktop\code\autopublish\image.jpg')
+time.sleep(1)
+driver.find_element_by_xpath("//span[@class='syl-img-upload']/input").send_keys(r'C:\Users\Administrator\Desktop\code\autopublish\toobig.gif')
+time.sleep(5)
+driver.find_element_by_xpath("//button[@data-e2e='imageUploadConfirm-btn']").click()
