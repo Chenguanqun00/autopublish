@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup
 import time
 import requests
 from authcode import math_img
+import os
 
 def getpic(path, url):
     res = requests.get(url)
@@ -44,9 +45,11 @@ def get_track(distance):
 
 def start(image, target, url, username, password):
     global imageurl, targeturl
-    driver = webdriver.Chrome(r'D:\Program Files\CentBrowser\CentBrowser\Application\chromedriver.exe')
+    #driver = webdriver.Chrome(r'D:\Program Files\CentBrowser\CentBrowser\Application\chromedriver.exe')
+    driver = webdriver.Chrome(r'C:\Users\ADMIN\AppData\Local\CentBrowser\Application\chromedriver.exe')
     driver.get(url)
     driver.maximize_window()
+    driver.implicitly_wait(5)
     #跳转到账号密码登录
     getaccount=driver.find_element_by_id('login-type-account')
     getaccount.click()
@@ -127,16 +130,46 @@ track(driver, distance)
 # print(res.status_code)
 # print(res.content)
 #点击发布
-time.sleep(4)
+time.sleep(9)
+driver.refresh()
+time.sleep(5)
 driver.find_elements_by_class_name('tui2-menu-item')[1].click()
-time.sleep(1)
+time.sleep(4)
 #上传图片
 driver.find_element_by_class_name('ql-image').click()
 time.sleep(1)
 #选择图片
-#print(driver.find_elements_by_tag_name('input'))
-driver.find_element_by_xpath("//span[@class='syl-img-upload']/input").send_keys(r'C:\Users\Administrator\Desktop\code\autopublish\image.jpg')
-time.sleep(1)
-driver.find_element_by_xpath("//span[@class='syl-img-upload']/input").send_keys(r'C:\Users\Administrator\Desktop\code\autopublish\toobig.gif')
+dirname = r"C:\Users\ADMIN\Desktop\code\autopublish"
+imgs = {}
+for file in os.listdir(dirname):
+    if file.endswith('.gif'):
+        name = file.split('.')[0]
+        img = dirname + '\\' + file
+        imgs[img] = name
+i = 1
+names = []
+for img in imgs:
+    print('i=' + str(i))
+    driver.find_element_by_xpath("//span[@class='syl-img-upload']/input").send_keys(img)
+    wait = WebDriverWait(driver, 20)
+    try:
+        flag = wait.until(EC.presence_of_element_located((By.XPATH, '//ul[@class="image-list"]/li[' + str(i) + ']/div[@class="success"]')))
+        print('success')
+        names.append(imgs[img])
+    except Exception as e:
+        print("上传失败，路径：%s,报错信息：%s" % (img, str(e)))
+    i += 1
+    #driver.find_element_by_xpath("//span[@class='syl-img-upload']/input").send_keys(r'C:\Users\Administrator\Desktop\code\autopublish\toobig.gif')
 time.sleep(5)
 driver.find_element_by_xpath("//button[@data-e2e='imageUploadConfirm-btn']").click()
+time.sleep(10)
+m = 1
+print(names)
+for name in names:
+    print('m=' + str(m))
+    print(name)
+    for n in name:
+        print(n)
+        driver.find_element_by_xpath('//div[@class="ql-editor"]/tt-image[' + str(m) + ']/div/div[@class="pgc-img-caption-wrapper"]/input').send_keys(n)
+        time.sleep(1)
+    m += 1
