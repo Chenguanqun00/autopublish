@@ -47,8 +47,13 @@ def get_track(distance):
 
 #登陆
 def login(url, username, password):
-    driver = webdriver.Chrome(r'D:\Program Files\CentBrowser\CentBrowser\Application\chromedriver.exe')
-    #driver = webdriver.Chrome(r'C:\Users\ADMIN\AppData\Local\CentBrowser\Application\chromedriver.exe')
+    options = webdriver.ChromeOptions()
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    firefoxdriver_path = r'D:\Program Files\firefox\geckodriver.exe'
+    chromedriver_path = r'C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe'
+    #driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+    #driver = webdriver.Firefox(executable_path=firefoxdriver_path, options=options)
+    driver = webdriver.Chrome(r'C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe')
     driver.get(url)
     driver.maximize_window()
     driver.implicitly_wait(10)
@@ -80,8 +85,6 @@ def track(driver):
 
     # 获取需要滑动的距离
     distance = 188
-
-    track_list = get_track(distance)
     time.sleep(2)
     slideblock = driver.find_element_by_xpath('//div[@id="nocaptcha"]/div/div/span')
     ActionChains(driver).click_and_hold(slideblock).perform()

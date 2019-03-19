@@ -245,4 +245,5 @@ if __name__ == '__main__':
 
     #发表
     time.sleep(2)
+    print("发布")
     driver.find_element_by_id("publish").click()

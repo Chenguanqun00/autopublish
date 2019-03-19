@@ -20,6 +20,7 @@ import requests
 from authcode import math_img
 import os
 import shutil
+from PIL import Image
 
 #下载
 def getpic(path, url):
@@ -50,8 +51,8 @@ def get_track(distance):
 #登陆
 def login(url, username, password):
     options = webdriver.ChromeOptions()
-    chrome_driver = r'C:\Users\ADMIN\AppData\Local\Google\Chrome\Application\chromedriver.exe'
-    #driver = webdriver.Chrome(r'D:\Program Files\CentBrowser\CentBrowser\Application\chromedriver.exe')
+    #chrome_driver = r'C:\Users\ADMIN\AppData\Local\Google\Chrome\Application\chromedriver.exe'
+    chrome_driver = r'D:\Program Files\CentBrowser\CentBrowser\Application\chromedriver.exe'
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     driver = webdriver.Chrome(executable_path=chrome_driver)
     driver.get(url)
@@ -84,68 +85,61 @@ def login(url, username, password):
 
     return driver
 
-#执行滑动实现登陆
-def track(driver):
-
-    # 获取需要滑动的距离
-    distance = 188
-
-    track_list = get_track(distance)
-    time.sleep(2)
-    slideblock = driver.find_element_by_xpath('//div[@id="nocaptcha"]/div/div/span')
-    ActionChains(driver).click_and_hold(slideblock).perform()
-    time.sleep(0.2)
-
-    ActionChains(driver).move_by_offset(xoffset=distance, yoffset=0).perform()
-
-    # 根据轨迹拖拽圆球
-    # for track in track_list:
-    #     ActionChains(driver).move_by_offset(xoffset=track, yoffset=0).perform()
-
-    time.sleep(2)
-    #务必记得加入quit()或close()结束进程，不断测试电脑只会卡卡西
-    #driver.close()
-
 #遍历目录下所以文件
-def gci(path):
-    """this is a statement"""
+def gci(path, allfile):
     parents = os.listdir(path)
     for parent in parents:
         if parent == "forgifs" or parent == "hilariousgifs":
             pass
         else:
-            child = os.path.join(path,parent)
+            child = os.path.join(path, parent)
             #print(child)
             if os.path.isdir(child):
-                gci(child)
+                gci(child, allfile)
             else:
-                filepath.append(child)
+                allfile.append(child)
                 #print(child)
+    #print(len(allfile))
+    return allfile
 
-def get_oldfile():
-    oldfile = filepath.pop(random.randint(0, len(filepath) - 1))
+#获取旧文件路径
+def get_oldgif(allfile):
+    oldfile = allfile.pop(random.randint(0, len(allfile) - 1))
     if os.path.getsize(oldfile) >= 5242880:
-        oldfile = get_oldfile()
+        oldfile = get_oldgif(allfile)
     return oldfile
 
-#获取新文件
-def get_newfile(count):
-    gci(path)
+def get_oldjpg(allfile):
+    oldfile = allfile.pop(random.randint(0, len(allfile) - 1))
+    img = Image.open(oldfile)
+    long = img.size[0]
+    width = img.size[1]
+    if long < 360 or width <270:
+        oldfile = get_oldjpg(allfile)
+    return oldfile
+
+#获取新文件路径
+def get_newfile(count, path, newpath,type):
+    files = []
+    allfile = gci(path, files)
     filelist = []
     imgs = {}
     for i in range(count):
-        oldfile = get_oldfile()
+        if type == 'gif':
+            oldfile = get_oldgif(allfile)
+        else:
+            oldfile = get_oldjpg(allfile)
         if not os.path.exists(newpath):
             os.makedirs(newpath)
         newfile = os.path.join(newpath, os.path.basename(oldfile))
         filelist.append(newfile)
         shutil.copyfile(oldfile, newfile)
         print("已复制新文件：%s" % newfile)
-        # os.remove(oldfile)
-        # print("已删除旧文件：%s" % oldfile)
+        os.remove(oldfile)
+        print("已删除旧文件：%s" % oldfile)
     for file in filelist:
         filename = os.path.basename(file)
-        if filename.endswith('.gif'):
+        if filename.endswith('.gif') or filename.endswith('.jpg'):
             name = filename.split('.')[0]
             imgs[file] = name
     return imgs
@@ -172,22 +166,26 @@ def uploadpic(imgs):
 #给图片加名字
 def uploadname():
     m = 0
+    iframe = driver.find_element_by_id("ueditor_0")
+    driver.switch_to.frame(iframe)
     for name in names:
-        if m > 1:
-            name = "1" + name
-        for n in name:
-            driver.find_elements_by_class_name('imagenote')[m].send_keys(n)
+        js = 'document.getElementsByClassName("imagenote")[' + str(m) + '].innerHTML="' + name + '"'
+        driver.execute_script(js)
         time.sleep(1)
         m += 1
 
 if __name__ == '__main__':
-    username = "694314541"       #用户名
-    password = "li@648236"     #密码
+    username = "694314541"                      #用户名
+    password = "li@648236"                      #密码
     url = "https://om.qq.com/userAuth/index"    #登陆地址
-    path = r"C:\ziyuan\gif"        #资源路径
-    newpath = r"C:\自媒体\已发表\GIF\{0}\{1}".format(time.strftime("%Y%m%d", time.localtime()), "企鹅号")    #新图片存放路径
-    filepath = []                  #保存新图片路径
-    count = 10                     #筛选图片数量
+    gifpath = r"E:\ziyuan\gif"                  #GIF资源路径
+    gifnewpath = r"E:\自媒体\已发表\GIF\{0}\{1}".format(time.strftime("%Y%m%d", time.localtime()), "企鹅号")    #新GIF存放路径
+    jpgpath = r"E:\ziyuan\pic"                  #pic资源路径
+    jpgnewpath = r"E:\自媒体\已发表\pic\{0}\{1}".format(time.strftime("%Y%m%d", time.localtime()), "企鹅号")    #新pic存放路径
+    gifcount = 10                               #筛选gif图片数量
+    jpgcount = 3                                #筛选jpg图片数量
+    giftype = 'gif'
+    jpgtype = 'jpg'
 
     #打开登陆页面获取验证码
     print("登陆中...")
@@ -197,17 +195,17 @@ if __name__ == '__main__':
     time.sleep(5)
     driver.find_elements_by_class_name('menu-sub-text')[0].click()
 
-    # #点击上传
+    # #点击上传图片
     time.sleep(4)
     driver.find_element_by_css_selector("[class='edui-box edui-icon edui-om']").click()
 
-    #从本地资源中随机选择图片
+    #从本地资源中随机选择GIF图片
     time.sleep(2)
-    print("筛选图片...")
-    imgs = get_newfile(count)
+    print("筛选GIF图片...")
+    imgs = get_newfile(gifcount, gifpath, gifnewpath, giftype)
 
-    #上传图片
-    print("上传图片...")
+    #上传GIF图片
+    print("上传GIF图片...")
     names = uploadpic(imgs)
 
     #随机从名字中生成一个标题
@@ -221,13 +219,40 @@ if __name__ == '__main__':
     print("加名字...")
     uploadname()
 
-    # #滑动到页面底部
-    # js = "var q=document.documentElement.scrollTop=100000"
-    # driver.execute_script(js)
-    #
+    #从本地资源中随机选择jpg图片
+    time.sleep(2)
+    print("筛选jpg图片...")
+    imgs = get_newfile(jpgcount, jpgpath, jpgnewpath, jpgtype)
+
+    #切换回默认frame
+    driver.switch_to.default_content()
+
+    #点击上传图片
+    time.sleep(2)
+    driver.find_element_by_css_selector("[class='edui-box edui-icon edui-om']").click()
+
+    # 上传JPG图片
+    print("上传jpg图片...")
+    uploadpic(imgs)
+
+    #滑动到页面底部
+    time.sleep(2)
+    js = "var q=document.documentElement.scrollTop=100000"
+    driver.execute_script(js)
+
     # #选择封面设置为自动
-    # driver.find_element_by_xpath('//div[@class="article-cover"]/div[@class="tui2-radio-group"]/label[3]/div/input').click()
-    #
+    time.sleep(2)
+    driver.find_element_by_xpath('//div[@class="checkbox-inline"]/label[2]/i').click()
+
+    # #选择分类
+    driver.find_element_by_xpath('//div[@class="form-inline"]/div[2]/div').click()
+
     # #发表
-    # time.sleep(2)
-    # #driver.find_element_by_id("publish").click()
+    time.sleep(2)
+    driver.find_element_by_xpath('//div[@class="inline-block"]/button').click()
+
+    #确认发布
+    time.sleep(2)
+    driver.find_element_by_xpath('//div[@class="pop-action"]/button[2]').click()
+    time.sleep(2)
+    driver.find_element_by_class_name('layui-layer-btn0').click()
